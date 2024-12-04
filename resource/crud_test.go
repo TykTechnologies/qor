@@ -44,12 +44,14 @@ func TestToPrimaryQueryParams(t *testing.T) {
 			primaryValue:      "123",
 			expectedSQL:       `"dummy_structs"."id" = ?`,
 			expectedQueryArgs: []interface{}{"123"},
+			// When the primary value is numeric, the query should filter records using the 'id' field.
 		},
 		{
 			name:              "Single primary field 'cid' with valid value",
 			primaryValue:      "abc",
 			expectedSQL:       `"dummy_structs"."cid" = ?`,
 			expectedQueryArgs: []interface{}{"abc"},
+			// When the primary value is non-numeric, the query should filter records using the 'cid' field instead of 'id'.
 		},
 	}
 
