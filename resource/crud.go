@@ -156,7 +156,6 @@ func (res *Resource) deleteHandler(result interface{}, context *qor.Context) err
 	return roles.ErrPermissionDenied
 }
 
-// Helper function
 func isNumeric(s string) bool {
 	_, err := strconv.ParseUint(s, 10, 64)
 
