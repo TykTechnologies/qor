@@ -1,0 +1,4 @@
+[config]
+model="anthropic/claude-3-opus-20240229"
+model_turbo="anthropic/claude-3-opus-20240229"
+fallback_models=["anthropic/claude-3-opus-20240229"]
