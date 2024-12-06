@@ -1,0 +1,116 @@
+name: CI tests and linters
+
+on:
+  pull_request:
+    branches:
+      - master
+      - release-**
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+
+env:
+    GOPRIVATE: github.com/TykTechnologies/*
+
+jobs:
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: use gh token
+        env:
+            TOKEN: '${{ secrets.ORG_GH_TOKEN }}'
+        run: >
+          git config --global url."https://${TOKEN}@github.com".insteadOf "https://github.com"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.7'
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v5
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          version: v1.57.2
+          only-new-issues: true
+          args: --timeout=600s --out-format checkstyle:golanglint.xml,github-actions
+      - uses: actions/upload-artifact@v4
+        with:
+          name: golangcilint
+          retention-days: 1
+          path: |
+            golanglint.xml
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: use gh token
+        env:
+            TOKEN: '${{ secrets.ORG_GH_TOKEN }}'
+        run: >
+          git config --global url."https://${TOKEN}@github.com".insteadOf "https://github.com"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.7'   
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Run unit tests
+        run: |
+          make test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          retention-days: 1
+          path: |
+            *.cov
+  
+  sonarcloud:
+    name: SonarCloud
+    needs: [golangci-lint,tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: golangcilint
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - name: Check reports existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: '*.cov, golanglint.xml'
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          args: >
+            -Dsonar.organization=tyktechnologies
+            -Dsonar.projectKey=TykTechnologies_qor 
+            -Dsonar.sources=.
+            -Dsonar.exclusions=ui-tests/**,**/mock/**,tests/**,**/*.js
+            -Dsonar.coverage.exclusions=**/*_test.go
+            -Dsonar.test.inclusions=**/*_test.go
+            -Dsonar.tests=.
+            -Dsonar.go.coverage.reportPaths=*.cov
+            -Dsonar.go.golangci-lint.reportPaths=golanglint.xml        
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
