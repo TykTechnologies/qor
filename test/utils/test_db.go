@@ -36,8 +36,10 @@ func TestDB() *gorm.DB {
 		// CREATE DATABASE qor_test;
 		// GRANT ALL ON qor_test.* TO 'qor'@'localhost';
 		db, err = gorm.Open("mysql", fmt.Sprintf("%s:%s@/%s?charset=utf8&parseTime=True&loc=Local", dbuser, dbpwd, dbname))
-	} else {
+	} else if os.Getenv("TEST_DB") == "sqlite" {
 		db, err = gorm.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", dbuser, dbpwd, dbhost, dbname))
+	} else {
+		db, err = gorm.Open("sqlite3", "file::memory:?cache=shared")
 	}
 
 	if err != nil {

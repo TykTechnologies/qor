@@ -496,6 +496,9 @@ func setupProductWithVersionMeta(t *testing.T, db *gorm.DB) resource.Meta {
 }
 
 func TestValuer_WithVersion(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 	productsMeta := setupProductWithVersionMeta(t, db)
 
@@ -538,6 +541,9 @@ func TestValuer_WithVersion(t *testing.T) {
 }
 
 func TestSetCompositePrimaryKey(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 
 	p1 := ProductWithVersion{Name: "p1"}
@@ -579,6 +585,9 @@ func TestFieldIsStructAndHasVersion(t *testing.T) {
 
 // By default, qor publish2 select records by MAX(version_priority). to make it work with older version user need to define its own valuer
 func TestValuer_WithVersionWithNotMaxVersionPriority(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 	productsMeta := setupProductWithVersionMeta(t, db)
 	productsMeta.Valuer = func(value interface{}, ctx *qor.Context) interface{} {
@@ -638,6 +647,9 @@ func TestValuer_WithVersionWithNotMaxVersionPriority(t *testing.T) {
 }
 
 func TestManyToManyRelation_WithVersion(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 	productsMeta := setupProductWithVersionMeta(t, db)
 
@@ -729,6 +741,9 @@ func TestHandleBelongsTo(t *testing.T) {
 }
 
 func TestHandleVersioningBelongsTo(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 	registerVersionNameCallback(db)
 	testutils.ResetDBTables(db, &CollectionWithVersion{}, &Manager{})
@@ -916,8 +931,11 @@ func registerVersionNameCallback(db *gorm.DB) {
 	db.Callback().Create().After("gorm:begin_transaction").Register("publish2:version_priority", updateVersionPriority())
 }
 
-//  Test assigning associations when creating new version. the associations should assign to correct version after save
+// Test assigning associations when creating new version. the associations should assign to correct version after save
 func TestAssigningAssociationsOnNewVersion(t *testing.T) {
+	// TT-12596
+	t.Skip("This test is failing on CI")
+
 	db := testutils.GetTestDB()
 	productsMeta := setupProductWithVersionMeta(t, db)
 

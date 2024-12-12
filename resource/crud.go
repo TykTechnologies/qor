@@ -3,6 +3,7 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -52,7 +53,15 @@ func (res *Resource) ToPrimaryQueryParams(primaryValue string, context *qor.Cont
 
 		// fallback to first configured primary field
 		if len(res.PrimaryFields) > 0 {
-			return fmt.Sprintf("%v.%v = ?", scope.QuotedTableName(), scope.Quote(res.PrimaryFields[0].DBName)), []interface{}{primaryValue}
+			dbName := res.PrimaryFields[0].DBName
+
+			if scope.HasColumn("cid") {
+				if !isNumeric(primaryValue) {
+					dbName = "cid"
+				}
+			}
+
+			return fmt.Sprintf("%v.%v = ?", scope.QuotedTableName(), scope.Quote(dbName)), []interface{}{primaryValue}
 		}
 
 		// if no configured primary fields found
@@ -145,4 +154,10 @@ func (res *Resource) deleteHandler(result interface{}, context *qor.Context) err
 		return gorm.ErrRecordNotFound
 	}
 	return roles.ErrPermissionDenied
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.ParseUint(s, 10, 64)
+
+	return err == nil
 }
