@@ -144,11 +144,13 @@ func (res *Resource) saveHandler(result interface{}, context *qor.Context) error
 		if !res.HasPermission(roles.Create, context) {
 			return roles.ErrPermissionDenied
 		}
+		
 		return context.GetDB().Create(result).Error
 	}
 
 	// If we have a non-zero primary key, first check if it exists
 	var count int
+	
 	primaryField := scope.PrimaryField()
 	if primaryField == nil {
 		return fmt.Errorf("no primary key field found")
@@ -164,9 +166,11 @@ func (res *Resource) saveHandler(result interface{}, context *qor.Context) error
 		if count > 0 {
 			return fmt.Errorf("record with primary key %v already exists", scope.PrimaryKeyValue())
 		}
+		
 		if !res.HasPermission(roles.Create, context) {
 			return roles.ErrPermissionDenied
 		}
+		
 		return context.GetDB().Create(result).Error
 	}
 
