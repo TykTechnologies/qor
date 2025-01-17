@@ -73,6 +73,8 @@ func ToInt(value interface{}) int64 {
 		return 0
 	} else if i, err := strconv.ParseInt(result, 10, 64); err == nil {
 		return i
+	} else if f, err := strconv.ParseFloat(result, 64); err == nil {
+		return int64(f)
 	} else {
 		panic("failed to parse int: " + result)
 	}
