@@ -136,12 +136,50 @@ func (res *Resource) findManyHandler(result interface{}, context *qor.Context) e
 }
 
 func (res *Resource) saveHandler(result interface{}, context *qor.Context) error {
-	if (context.GetDB().NewScope(result).PrimaryKeyZero() &&
-		res.HasPermission(roles.Create, context)) || // has create permission
-		res.HasPermission(roles.Update, context) { // has update permission
-		return context.GetDB().Save(result).Error
+	scope := context.GetDB().NewScope(result)
+	isPrimaryKeyZero := scope.PrimaryKeyZero()
+
+	if isPrimaryKeyZero {
+		// Create operation
+		if !res.HasPermission(roles.Create, context) {
+			return roles.ErrPermissionDenied
+		}
+		return context.GetDB().Create(result).Error
 	}
-	return roles.ErrPermissionDenied
+
+	// If we have a non-zero primary key, first check if it exists
+	var count int
+	primaryField := scope.PrimaryField()
+	if primaryField == nil {
+		return fmt.Errorf("no primary key field found")
+	}
+
+	query := fmt.Sprintf("%v = ?", scope.Quote(primaryField.DBName))
+	if err := context.GetDB().Model(result).Where(query, scope.PrimaryKeyValue()).Count(&count).Error; err != nil {
+		return err
+	}
+
+	// For creation attempts with existing ID
+	if context.Request != nil && context.Request.Method == "POST" {
+		if count > 0 {
+			return fmt.Errorf("record with primary key %v already exists", scope.PrimaryKeyValue())
+		}
+		if !res.HasPermission(roles.Create, context) {
+			return roles.ErrPermissionDenied
+		}
+		return context.GetDB().Create(result).Error
+	}
+
+	// Update operation
+	if !res.HasPermission(roles.Update, context) {
+		return roles.ErrPermissionDenied
+	}
+
+	if count == 0 {
+		return fmt.Errorf("record with primary key %v not found", scope.PrimaryKeyValue())
+	}
+
+	return context.GetDB().Save(result).Error
 }
 
 func (res *Resource) deleteHandler(result interface{}, context *qor.Context) error {
