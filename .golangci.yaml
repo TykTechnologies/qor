@@ -10,7 +10,6 @@ run:
   # Default: true
   tests: true
 
-
   # Which dirs to skip: issues from them won't be reported.
   # Can use regexp here: `generated.*`, regexp is applied on full path.
   # Default value is empty list,
@@ -26,7 +25,6 @@ run:
   # - vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
   # Default: true
   skip-dirs-use-default: true
-
 
   # If set we pass it to "go list -mod={option}". From "go help modules":
   # If invoked with -mod=readonly, the go command is disallowed from the implicit
@@ -80,7 +78,6 @@ linters:
     - misspell
     - revive
     - staticcheck
-    - wsl
 
 linters-settings:
   dupl:
@@ -113,14 +110,13 @@ linters-settings:
     # Select the Go version to target.
     lang-version: "1.22.7"
 
-
   govet:
     # Report about shadowed variables
     check-shadowing: true
     enable-all: true
     disable:
       - fieldalignment
-    
+
   gosec:
     excludes:
       - G601
@@ -143,13 +139,13 @@ linters-settings:
 
   staticcheck:
     # https://staticcheck.io/docs/options#checks
-    checks: [ "all" ]
+    checks: ["all"]
     # Select the Go version to target.
     go: "1.22.7"
 
   whitespace:
-    multi-if: false  # Enforces newlines (or comments) after every multi-line if statement
-    multi-func: false  # Enforces newlines (or comments) after every multi-line function signature
+    multi-if: false # Enforces newlines (or comments) after every multi-line if statement
+    multi-func: false # Enforces newlines (or comments) after every multi-line function signature
 
   wsl:
     # Controls if you may cuddle assignments and anything without needing an empty line between them.
