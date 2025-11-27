@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -164,4 +165,68 @@ func TestSafeJoin(t *testing.T) {
 	if err == nil || pth2 != "" {
 		t.Errorf("no error should happen")
 	}
+}
+
+func TestGOPATH(t *testing.T) {
+	// Save original GOPATH to restore later
+	originalGOPATH := os.Getenv("GOPATH")
+	t.Cleanup(func() {
+		os.Setenv("GOPATH", originalGOPATH)
+	})
+
+	t.Run("WithEnvironmentVariable", func(t *testing.T) {
+		// Set GOPATH environment variable
+		testPath := "/test/gopath"
+		os.Setenv("GOPATH", testPath)
+
+		paths := GOPATH()
+		if len(paths) == 0 {
+			t.Error("GOPATH() should return at least one path when env var is set")
+		}
+		if paths[0] != testPath {
+			t.Errorf("GOPATH() = %v; want %v", paths[0], testPath)
+		}
+	})
+
+	t.Run("WithMultiplePathsInEnvironment", func(t *testing.T) {
+		// Set multiple paths in GOPATH
+		testPaths := "/test/gopath1" + string(os.PathListSeparator) + "/test/gopath2"
+		os.Setenv("GOPATH", testPaths)
+
+		paths := GOPATH()
+		if len(paths) != 2 {
+			t.Errorf("GOPATH() should return 2 paths; got %d", len(paths))
+		}
+		if paths[0] != "/test/gopath1" || paths[1] != "/test/gopath2" {
+			t.Errorf("GOPATH() = %v; want [/test/gopath1, /test/gopath2]", paths)
+		}
+	})
+
+	t.Run("FallbackToGoEnvCommand", func(t *testing.T) {
+		// Unset GOPATH to test fallback
+		os.Unsetenv("GOPATH")
+
+		paths := GOPATH()
+		// Should fallback to 'go env GOPATH' which should always return something
+		if len(paths) == 0 {
+			t.Error("GOPATH() should fallback to 'go env GOPATH' and return at least one path")
+		}
+		if paths[0] == "" {
+			t.Error("GOPATH() fallback should return a non-empty path")
+		}
+	})
+
+	t.Run("WithEmptyEnvironmentVariable", func(t *testing.T) {
+		// Set empty GOPATH
+		os.Setenv("GOPATH", "")
+
+		paths := GOPATH()
+		// Should fallback to 'go env GOPATH'
+		if len(paths) == 0 {
+			t.Error("GOPATH() should fallback to 'go env GOPATH' when env var is empty")
+		}
+		if len(paths) > 0 && paths[0] == "" {
+			t.Error("GOPATH() should return valid paths from 'go env GOPATH' fallback")
+		}
+	})
 }

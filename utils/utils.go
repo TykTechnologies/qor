@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -14,6 +15,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -21,8 +23,6 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/qor/qor"
-
-	"strings"
 )
 
 // AppRoot app root path
@@ -44,13 +44,29 @@ func init() {
 	}
 }
 
-// GOPATH return GOPATH from env
+// GOPATH return GOPATH from env, fallback to 'go env GOPATH' if not set
 func GOPATH() []string {
-	paths := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
-	if len(paths) == 0 {
-		fmt.Println("GOPATH doesn't exist")
+	// Try environment variable first
+	if gopath := os.Getenv("GOPATH"); gopath != "" {
+		paths := strings.Split(gopath, string(os.PathListSeparator))
+		if len(paths) > 0 && paths[0] != "" {
+			return paths
+		}
 	}
-	return paths
+
+	// Fallback to 'go env GOPATH'
+	cmd := exec.Command("go", "env", "GOPATH")
+	output, err := cmd.Output()
+	if err == nil {
+		gopath := strings.TrimSpace(string(output))
+		if gopath != "" {
+			return strings.Split(gopath, string(os.PathListSeparator))
+		}
+	}
+
+	// Last resort: return empty slice
+	fmt.Println("GOPATH could not be determined")
+	return []string{}
 }
 
 // GetDBFromRequest get database from request
